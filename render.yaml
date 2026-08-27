@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: clinic-management
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
