@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
     Stethoscope, Search, AlertCircle, CheckCircle2, Home, UserPlus,
-    ClipboardList, BarChart3,
+    ClipboardList, BarChart3, Menu
 } from "lucide-react";
 import { todayISO, fmtDate, nowTime } from "./helpers";
 
@@ -82,7 +82,8 @@ export const NAV_ITEMS = [
     { id: "reports", label: "Reports", icon: BarChart3, key: "F5" },
 ];
 
-export function Sidebar({ view, setView }) {
+export function Sidebar({ view, setView, isOpen }) {
+    if (!isOpen) return null;
     return (
         <div style={{ width: 236, flexShrink: 0, background: "var(--surface)", borderRight: "1px solid var(--border)", padding: "20px 14px", display: "flex", flexDirection: "column", gap: 4, height: "100%" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px 20px" }}>
@@ -109,14 +110,17 @@ export function Sidebar({ view, setView }) {
     );
 }
 
-export function TopBar({ query, setQuery, onSearchSubmit, db }) {
+export function TopBar({ query, setQuery, onSearchSubmit, db, toggleSidebar }) {
     const suggestions = db ? useSuggestions(db) : { globalSearch: [] };
     return (
         <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "14px 26px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
             {db && <Datalists s={suggestions} />}
-            <div>
-                <div className="font-display" style={{ fontWeight: 800, fontSize: 17 }}>Dhyey Clinic &middot; Patient Management</div>
-                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{fmtDate(todayISO())}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <button className="cms-btn-ghost" style={{ padding: 6, display: "flex" }} onClick={toggleSidebar}><Menu size={20} /></button>
+                <div>
+                    <div className="font-display" style={{ fontWeight: 800, fontSize: 17 }}>Dhyey Clinic &middot; Patient Management</div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{fmtDate(todayISO())}</div>
+                </div>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); onSearchSubmit(query); }} style={{ display: "flex", alignItems: "center", gap: 8, width: 380 }}>
                 <div style={{ position: "relative", flex: 1 }}>

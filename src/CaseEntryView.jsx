@@ -101,7 +101,7 @@ function EditVisitModal({ visit, onSave, onClose, suggestions }) {
                             <div key={idx} style={{ display: "flex", gap: 8, marginBottom: 6 }}>
                                 <input className="cms-input" list="dl-treatment-names" placeholder="Item name" style={{ flex: 3 }} value={r.name} onChange={(e) => updateItem(treatment, setTreatment, idx, "name", e.target.value)} />
                                 <input className="cms-input" placeholder="Qty" style={{ flex: 1 }} value={r.qty} onChange={(e) => updateItem(treatment, setTreatment, idx, "qty", e.target.value)} />
-                                <button type="button" className="cms-btn-danger" onClick={() => setTreatment(treatment.filter((_, i) => i !== idx))}><Trash2 size={13} /></button>
+                                <button type="button" className="cms-btn-ghost" style={{ color: "var(--danger)" }} onClick={() => setTreatment(treatment.filter((_, i) => i !== idx))}><X size={14} /></button>
                             </div>
                         ))}
                     </div>
@@ -122,7 +122,7 @@ function EditVisitModal({ visit, onSave, onClose, suggestions }) {
                                 <input className="cms-input" style={{ flex: 1, textAlign: "center" }} value={r.noon} onChange={(e) => updateItem(prescription, setPrescription, idx, "noon", e.target.value)} />
                                 <input className="cms-input" style={{ flex: 1, textAlign: "center" }} value={r.eve} onChange={(e) => updateItem(prescription, setPrescription, idx, "eve", e.target.value)} />
                                 <input className="cms-input" style={{ flex: 1, textAlign: "center" }} value={r.ngt} onChange={(e) => updateItem(prescription, setPrescription, idx, "ngt", e.target.value)} />
-                                <button type="button" className="cms-btn-danger" style={{ width: 30 }} onClick={() => setPrescription(prescription.filter((_, i) => i !== idx))}><Trash2 size={13} /></button>
+                                <button type="button" className="cms-btn-ghost" style={{ width: 30, color: "var(--danger)" }} onClick={() => setPrescription(prescription.filter((_, i) => i !== idx))}><X size={14} /></button>
                             </div>
                         ))}
                     </div>
@@ -174,6 +174,7 @@ export default function CaseEntryView({ db, selection, setSelection, onAddVisit,
     const [selectedVisit, setSelectedVisit] = useState(null);
     const [editingVisit, setEditingVisit] = useState(null);
     const [editingPatient, setEditingPatient] = useState(false);
+    const [showDeletes, setShowDeletes] = useState(false);
 
     const results = famQuery.trim() ? searchFamilies(db, famQuery) : [];
     const family = selection.familyId ? db.families[selection.familyId] : null;
@@ -198,8 +199,20 @@ export default function CaseEntryView({ db, selection, setSelection, onAddVisit,
 
     const pickFamily = (famId) => {
         const fam = db.families[famId];
-        const firstPatientId = Object.keys(fam.patients)[0];
-        setSelection({ familyId: famId, patientId: firstPatientId || null });
+        let matchedPatientId = null;
+        const q = famQuery.trim().toLowerCase();
+
+        if (q) {
+            for (const [pId, p] of Object.entries(fam.patients)) {
+                if (p.name.toLowerCase().includes(q)) {
+                    matchedPatientId = pId;
+                    break;
+                }
+            }
+        }
+
+        const targetPatientId = matchedPatientId || Object.keys(fam.patients)[0] || null;
+        setSelection({ familyId: famId, patientId: targetPatientId });
         setFamQuery(""); setFamHighlight(0);
     };
 
@@ -328,51 +341,77 @@ export default function CaseEntryView({ db, selection, setSelection, onAddVisit,
                                                         <td><input className="cms-input-sm" list="dl-diagnosis" value={row.diagnosis} onChange={(e) => setRow({ ...row, diagnosis: e.target.value })} /></td>
                                                         <td><input className="cms-input-sm" list="dl-complaint" value={row.complaint} onChange={(e) => setRow({ ...row, complaint: e.target.value })} /></td>
                                                         <td>
-                                                            <div style={{ display: "flex", gap: 4 }}>
-                                                                <button className="cms-btn-icon" style={{ background: "var(--primary)", color: "white" }} title="Save" onClick={saveEntry}><Check size={14} /></button>
-                                                                <button className="cms-btn-icon" style={{ background: "var(--danger-soft)", color: "var(--danger)" }} title="Cancel" onClick={() => setEntryOpen(false)}><X size={14} /></button>
-                                                            </div>
+                                                            {/* Bottom buttons removed from here. Placed below. */}
                                                         </td>
                                                     </tr>
                                                     {/* Treatment & Prescription entry below the row */}
                                                     <tr className="cms-entry-row">
-                                                        <td colSpan={8} style={{ padding: "8px 12px" }}>
-                                                            <div style={{ display: "flex", gap: 20 }}>
-                                                                <div style={{ flex: 1 }}>
-                                                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                                                                        <span className="cms-label" style={{ margin: 0, fontSize: 10 }}>Treatment (clinic)</span>
-                                                                        <button type="button" className="cms-btn-ghost" style={{ padding: "2px 8px", fontSize: 11 }} onClick={() => setTreatment([...treatment, { name: "", qty: "" }])}><Plus size={11} /></button>
+                                                        <td colSpan={8} style={{ padding: "16px", borderBottom: "2px solid var(--border)" }}>
+                                                            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+                                                                {/* Treatment Section */}
+                                                                <div onFocus={() => setShowDeletes(false)}>
+                                                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                                                                        <span className="cms-label" style={{ margin: 0, fontSize: 11 }}>Treatment (clinic)</span>
                                                                     </div>
-                                                                    {treatment.map((r, idx) => (
-                                                                        <div key={idx} style={{ display: "flex", gap: 4, marginBottom: 4 }}>
-                                                                            <input className="cms-input-sm" list="dl-treatment-names" placeholder="Item" style={{ flex: 3 }} value={r.name} onChange={(e) => updateItem(treatment, setTreatment, idx, "name", e.target.value)} />
-                                                                            <input className="cms-input-sm" placeholder="Qty" style={{ flex: 1 }} value={r.qty} onChange={(e) => updateItem(treatment, setTreatment, idx, "qty", e.target.value)} />
-                                                                            <button type="button" className="cms-btn-danger" style={{ padding: "2px 6px" }} onClick={() => setTreatment(treatment.filter((_, i) => i !== idx))}><Trash2 size={11} /></button>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                                <div style={{ flex: 1.4 }}>
-                                                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                                                                        <span className="cms-label" style={{ margin: 0, fontSize: 10 }}>Prescription (store)</span>
-                                                                        <button type="button" className="cms-btn-ghost" style={{ padding: "2px 8px", fontSize: 11 }} onClick={() => setPrescription([...prescription, { name: "", qty: "", mor: "", noon: "", eve: "", ngt: "" }])}><Plus size={11} /></button>
+                                                                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                                                        {treatment.map((r, idx) => {
+                                                                            const isLast = idx === treatment.length - 1;
+                                                                            return (
+                                                                                <div key={idx} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                                                                                    <input className="cms-input" list="dl-treatment-names" placeholder="Item" style={{ flex: 3 }} value={r.name} onChange={(e) => updateItem(treatment, setTreatment, idx, "name", e.target.value)} />
+                                                                                    <input className="cms-input" placeholder="Qty" style={{ flex: 1 }} value={r.qty} onChange={(e) => updateItem(treatment, setTreatment, idx, "qty", e.target.value)} />
+                                                                                    {isLast && !showDeletes ? (
+                                                                                        <button type="button" className="cms-btn-ghost" style={{ padding: "4px 8px" }} onClick={() => setTreatment([...treatment, { name: "", qty: "" }])}><Plus size={14} /></button>
+                                                                                    ) : (
+                                                                                        showDeletes && (treatment.length > 1 || r.name || r.qty) && <button type="button" className="cms-btn-ghost" style={{ color: "var(--danger)", padding: "4px" }} onMouseDown={(e) => { e.preventDefault(); if (window.confirm("Delete this treatment row?")) setTreatment(treatment.filter((_, i) => i !== idx)); }}><X size={14} /></button>
+                                                                                    )}
+                                                                                </div>
+                                                                            )
+                                                                        })}
                                                                     </div>
-                                                                    {prescription.map((r, idx) => (
-                                                                        <div key={idx} style={{ display: "flex", gap: 4, marginBottom: 4 }}>
-                                                                            <input className="cms-input-sm" list="dl-prescription-names" placeholder="Medicine" style={{ flex: 3 }} value={r.name} onChange={(e) => updateItem(prescription, setPrescription, idx, "name", e.target.value)} />
-                                                                            <input className="cms-input-sm" placeholder="Qty" style={{ flex: 1 }} value={r.qty} onChange={(e) => updateItem(prescription, setPrescription, idx, "qty", e.target.value)} />
-                                                                            <input className="cms-input-sm" style={{ flex: 0.7, textAlign: "center" }} placeholder="M" value={r.mor} onChange={(e) => updateItem(prescription, setPrescription, idx, "mor", e.target.value)} />
-                                                                            <input className="cms-input-sm" style={{ flex: 0.7, textAlign: "center" }} placeholder="N" value={r.noon} onChange={(e) => updateItem(prescription, setPrescription, idx, "noon", e.target.value)} />
-                                                                            <input className="cms-input-sm" style={{ flex: 0.7, textAlign: "center" }} placeholder="E" value={r.eve} onChange={(e) => updateItem(prescription, setPrescription, idx, "eve", e.target.value)} />
-                                                                            <input className="cms-input-sm" style={{ flex: 0.7, textAlign: "center" }} placeholder="Ng" value={r.ngt} onChange={(e) => updateItem(prescription, setPrescription, idx, "ngt", e.target.value)} />
-                                                                            <button type="button" className="cms-btn-danger" style={{ padding: "2px 6px" }} onClick={() => setPrescription(prescription.filter((_, i) => i !== idx))}><Trash2 size={11} /></button>
-                                                                        </div>
-                                                                    ))}
                                                                 </div>
-                                                            </div>
-                                                            <div style={{ display: "flex", gap: 12, marginTop: 8, alignItems: "center" }}>
-                                                                <div><label className="cms-label" style={{ margin: 0 }}>Charge</label><input className="cms-input-sm" style={{ width: 70 }} value={row.charge} onChange={(e) => setRow({ ...row, charge: e.target.value })} /></div>
-                                                                <div><label className="cms-label" style={{ margin: 0 }}>Received</label><input className="cms-input-sm" style={{ width: 70 }} value={row.received} onChange={(e) => setRow({ ...row, received: e.target.value })} /></div>
-                                                                <div><label className="cms-label" style={{ margin: 0 }}>Due</label><span className="font-mono" style={{ fontWeight: 700, color: due > 0 ? "var(--danger)" : "var(--primary-dark)" }}>{fmtMoney(due)}</span></div>
+
+                                                                {/* Prescription Section */}
+                                                                <div style={{ borderTop: "1px dashed var(--border)", paddingTop: 16 }} onFocus={() => setShowDeletes(false)}>
+                                                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                                                                        <span className="cms-label" style={{ margin: 0, fontSize: 11 }}>Prescription (medical store)</span>
+                                                                    </div>
+                                                                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                                                        {prescription.map((r, idx) => {
+                                                                            const isLast = idx === prescription.length - 1;
+                                                                            return (
+                                                                                <div key={idx} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                                                                                    <input className="cms-input" list="dl-prescription-names" placeholder="Medicine" style={{ flex: 3 }} value={r.name} onChange={(e) => updateItem(prescription, setPrescription, idx, "name", e.target.value)} />
+                                                                                    <input className="cms-input" placeholder="Qty" style={{ flex: 1 }} value={r.qty} onChange={(e) => updateItem(prescription, setPrescription, idx, "qty", e.target.value)} />
+                                                                                    <input className="cms-input" style={{ flex: 0.7, textAlign: "center" }} placeholder="M" value={r.mor} onChange={(e) => updateItem(prescription, setPrescription, idx, "mor", e.target.value)} />
+                                                                                    <input className="cms-input" style={{ flex: 0.7, textAlign: "center" }} placeholder="N" value={r.noon} onChange={(e) => updateItem(prescription, setPrescription, idx, "noon", e.target.value)} />
+                                                                                    <input className="cms-input" style={{ flex: 0.7, textAlign: "center" }} placeholder="E" value={r.eve} onChange={(e) => updateItem(prescription, setPrescription, idx, "eve", e.target.value)} />
+                                                                                    <input className="cms-input" style={{ flex: 0.7, textAlign: "center" }} placeholder="Ng" value={r.ngt} onChange={(e) => updateItem(prescription, setPrescription, idx, "ngt", e.target.value)} />
+                                                                                    {isLast && !showDeletes ? (
+                                                                                        <button type="button" className="cms-btn-ghost" style={{ padding: "4px 8px" }} onClick={() => setPrescription([...prescription, { name: "", qty: "", mor: "", noon: "", eve: "", ngt: "" }])}><Plus size={14} /></button>
+                                                                                    ) : (
+                                                                                        showDeletes && (prescription.length > 1 || r.name || r.qty) && <button type="button" className="cms-btn-ghost" style={{ color: "var(--danger)", padding: "4px" }} onMouseDown={(e) => { e.preventDefault(); if (window.confirm("Delete this prescription row?")) setPrescription(prescription.filter((_, i) => i !== idx)); }}><X size={14} /></button>
+                                                                                    )}
+                                                                                </div>
+                                                                            )
+                                                                        })}
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Footer (Charge and Buttons) */}
+                                                                <div onFocus={() => setShowDeletes(true)} style={{ borderTop: "1px dashed var(--border)", paddingTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                                    <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                                                                        <div><label className="cms-label" style={{ margin: 0, marginBottom: 4 }}>Charge</label><input className="cms-input-sm" style={{ width: 80 }} value={row.charge} onChange={(e) => setRow({ ...row, charge: e.target.value })} /></div>
+                                                                        <div><label className="cms-label" style={{ margin: 0, marginBottom: 4 }}>Received</label><input className="cms-input-sm" style={{ width: 80 }} value={row.received} onChange={(e) => setRow({ ...row, received: e.target.value })} /></div>
+                                                                        <div><label className="cms-label" style={{ margin: 0, marginBottom: 4 }}>Due</label><div className="font-mono" style={{ fontWeight: 700, fontSize: 16, color: due > 0 ? "var(--danger)" : "var(--primary-dark)" }}>{fmtMoney(due)}</div></div>
+                                                                    </div>
+                                                                    <div style={{ display: "flex", gap: 12 }}>
+                                                                        <button className="cms-btn-ghost" onClick={() => setEntryOpen(false)}>Cancel</button>
+                                                                        <button className="cms-btn-primary" onClick={saveEntry}><Check size={14} />Save Visit Record</button>
+                                                                    </div>
+                                                                </div>
+
                                                             </div>
                                                         </td>
                                                     </tr>

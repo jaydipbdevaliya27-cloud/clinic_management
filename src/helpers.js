@@ -25,7 +25,9 @@ export const seedDB = () => ({
             patients: {
                 "0001": {
                     id: "0001", name: "PATEL RAMESHBHAI GOVINDBHAI", relation: "Head", age: 45, bloodGroup: "O+", allergy: "",
-                    visits: []
+                    visits: [
+                        { id: "v1", caseId: "0001000101", visitNum: 1, date: todayISO(), time: "10:15", weight: "75", bp: "130/80", refDr: "Dr. Shah", diagnosis: "Viral Infection", complaint: "Cough and Cold", treatment: [{ name: "Checkup", qty: "1" }], prescription: [{ name: "Paracetamol", qty: "10", mor: "1", noon: "1", eve: "1", ngt: "0" }], charge: 800, received: 500, due: 300 }
+                    ]
                 },
                 "0002": {
                     id: "0002", name: "PATEL SHARDABEN RAMESHBHAI", relation: "Wife", age: 43, bloodGroup: "B+", allergy: "DUST",
@@ -42,7 +44,9 @@ export const seedDB = () => ({
                 },
                 "0004": {
                     id: "0004", name: "SHARMA NEHABEN AMITBHAI", relation: "Wife", age: 48, bloodGroup: "A+", allergy: "",
-                    visits: []
+                    visits: [
+                        { id: "v2", caseId: "0002000401", visitNum: 1, date: todayISO(), time: "11:00", weight: "62", bp: "110/70", refDr: "Self", diagnosis: "Acidity", complaint: "Stomach pain", treatment: [{ name: "Consultation", qty: "1" }], prescription: [{ name: "Pantoprazole", qty: "5", mor: "1", noon: "0", eve: "0", ngt: "0" }], charge: 400, received: 400, due: 0 }
+                    ]
                 },
                 "0005": {
                     id: "0005", name: "SHARMA RAHUL AMITBHAI", relation: "Son", age: 22, bloodGroup: "AB+", allergy: "",
@@ -59,7 +63,9 @@ export const seedDB = () => ({
                 },
                 "0007": {
                     id: "0007", name: "SHAH KINJALBEN RAHULBHAI", relation: "Wife", age: 35, bloodGroup: "O+", allergy: "",
-                    visits: []
+                    visits: [
+                        { id: "v3", caseId: "0003000701", visitNum: 1, date: todayISO(), time: "12:30", weight: "60", bp: "120/80", refDr: "Self", diagnosis: "Migraine", complaint: "Headache", treatment: [{ name: "Consultation", qty: "1" }], prescription: [{ name: "Crocin", qty: "5", mor: "1", noon: "0", eve: "0", ngt: "0" }], charge: 600, received: 0, due: 600 }
+                    ]
                 }
             }
         },
@@ -77,7 +83,9 @@ export const seedDB = () => ({
             patients: {
                 "0009": {
                     id: "0009", name: "MEHTA VIKRAMBHAI SANJAYBHAI", relation: "Head", age: 28, bloodGroup: "AB-", allergy: "",
-                    visits: []
+                    visits: [
+                        { id: "v4", caseId: "0005000901", visitNum: 1, date: todayISO(), time: "09:30", weight: "70", bp: "120/80", refDr: "Self", diagnosis: "Fever", complaint: "Mild fever", treatment: [{ name: "Consultation", qty: "1" }], prescription: [], charge: 500, received: 500, due: 0 }
+                    ]
                 },
                 "0010": {
                     id: "0010", name: "MEHTA SANJAYBHAI NATVERLAL", relation: "Father", age: 62, bloodGroup: "A+", allergy: "",
@@ -106,9 +114,12 @@ export function searchFamilies(db, query) {
     if (!db) return [];
     const q = query.trim().toLowerCase();
     if (!q) return Object.values(db.families);
-    return Object.values(db.families).filter(
-        (f) => f.headName.toLowerCase().includes(q) || f.id === q || (f.area || "").toLowerCase().includes(q)
-    );
+
+    return Object.values(db.families).filter((f) => {
+        if (f.headName.toLowerCase().includes(q) || f.id === q || (f.area || "").toLowerCase().includes(q)) return true;
+        // Check if any member matches
+        return Object.values(f.patients).some((p) => p.name.toLowerCase().includes(q));
+    });
 }
 
 export function makeCaseId(famId, patId, visitNum) {

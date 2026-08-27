@@ -12,8 +12,10 @@ export default function ClinicApp() {
   const [db, setDb] = useState(null);
   const [view, setView] = useState("dashboard"); // dashboard, register, case, reports
   const [toast, setToast] = useState(null);
-  const [printData, setPrintData] = useState(null); // { pat, visit }
+  const [printData, setPrintData] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [topQuery, setTopQuery] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(null); // { type: "family"|"patient", famId, patId }
 
   // Global selection and context state
   const [selection, setSelection] = useState({ familyId: null, patientId: null });
@@ -23,16 +25,16 @@ export default function ClinicApp() {
   // Persistence (localStorage)
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("clinic-db");
+      const stored = localStorage.getItem("clinic-db-demo");
       if (stored) { setDb(JSON.parse(stored)); }
-      else { const init = seedDB(); setDb(init); localStorage.setItem("clinic-db", JSON.stringify(init)); }
+      else { const init = seedDB(); setDb(init); localStorage.setItem("clinic-db-demo", JSON.stringify(init)); }
     } catch (e) {
       console.error("Storage error:", e);
       setDb(seedDB());
     }
   }, []);
 
-  const saveDb = (newDb) => { setDb(newDb); localStorage.setItem("clinic-db", JSON.stringify(newDb)); };
+  const saveDb = (newDb) => { setDb(newDb); localStorage.setItem("clinic-db-demo", JSON.stringify(newDb)); };
   const showToast = (msg, type = "success") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3000); };
 
   // Keyboard Navigation
@@ -139,19 +141,17 @@ export default function ClinicApp() {
     showToast("Deleted dietary advice", "error");
   };
 
-  const deleteFamily = (famId) => {
-    if (window.confirm(`Are you sure you want to permanently delete Family ID ${famId} and all its members and visits?`)) {
-      const nextDb = { ...db, families: { ...db.families } };
+  const executeDelete = () => {
+    if (!confirmDelete) return;
+    const { type, famId, patId } = confirmDelete;
+    const nextDb = { ...db, families: { ...db.families } };
+
+    if (type === "family") {
       delete nextDb.families[famId];
       saveDb(nextDb);
       if (selection.familyId === famId) setSelection({ familyId: null, patientId: null });
       showToast(`Deleted Family ${famId}`, "error");
-    }
-  };
-
-  const deletePatient = (famId, patId) => {
-    if (window.confirm(`Are you sure you want to permanently delete Patient ID ${patId} and all their visits?`)) {
-      const nextDb = { ...db, families: { ...db.families } };
+    } else if (type === "patient") {
       const fam = { ...nextDb.families[famId], patients: { ...nextDb.families[famId].patients } };
       delete fam.patients[patId];
       nextDb.families[famId] = fam;
@@ -159,17 +159,21 @@ export default function ClinicApp() {
       if (selection.patientId === patId) setSelection({ ...selection, patientId: Object.keys(fam.patients)[0] || null });
       showToast(`Deleted Patient ${patId}`, "error");
     }
+    setConfirmDelete(null);
   };
+
+  const deleteFamily = (famId) => setConfirmDelete({ type: "family", famId });
+  const deletePatient = (famId, patId) => setConfirmDelete({ type: "patient", famId, patId });
 
   if (!db) return <div style={{ padding: 40, fontFamily: "Inter, sans-serif" }}>Loading Clinic DB...</div>;
 
   return (
     <div className="cms-root" style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
       <GlobalStyle />
-      <Sidebar view={view} setView={setView} />
+      <Sidebar view={view} setView={setView} isOpen={sidebarOpen} />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-        <TopBar query={topQuery} setQuery={setTopQuery} onSearchSubmit={handleGlobalSearch} db={db} />
+        <TopBar query={topQuery} setQuery={setTopQuery} onSearchSubmit={handleGlobalSearch} db={db} toggleSidebar={() => setSidebarOpen(s => !s)} />
 
         <div className="cms-scrollbar" style={{ flex: 1, overflowY: "auto", position: "relative" }}>
           {view === "dashboard" && <Dashboard db={db} goToPatient={(famId, patId) => { setSelection({ familyId: famId, patientId: patId }); setView("case"); }} />}
@@ -201,6 +205,24 @@ export default function ClinicApp() {
 
       {printData && (
         <PrescriptionPrintModal data={printData} dietary={db.dietary} onClose={() => setPrintData(null)} />
+      )}
+
+      {confirmDelete && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="cms-card" style={{ width: 400, padding: 24, boxShadow: "0 10px 40px rgba(0,0,0,0.2)" }}>
+            <div className="font-display" style={{ fontWeight: 800, fontSize: 18, color: "var(--danger)", marginBottom: 12 }}>Confirm Deletion</div>
+            <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 24, lineHeight: 1.5 }}>
+              {confirmDelete.type === "family"
+                ? `Are you absolutely sure you want to permanently delete Family ID ${confirmDelete.famId}? This will erase all associated members and visit histories forever.`
+                : `Are you sure you want to permanently delete Patient ID ${confirmDelete.patId}? This will erase all of their visit histories forever.`
+              }
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+              <button type="button" className="cms-btn-ghost" onClick={() => setConfirmDelete(null)}>Cancel</button>
+              <button type="button" className="cms-btn-danger" onClick={executeDelete} style={{ padding: "9px 16px", borderRadius: 10 }}>Yes, Delete Now</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

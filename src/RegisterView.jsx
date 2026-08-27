@@ -17,7 +17,7 @@ function NewFamilyForm({ db, onCreate, autoFocusRef }) {
                 Enter the head's name and area. A numeric Family ID is generated instantly. Then add each family member through the member form.
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div style={{ gridColumn: "1 / -1" }}><label className="cms-label">Family Head Name *</label><input ref={autoFocusRef} autoFocus className="cms-input" value={headName} onChange={(e) => setHeadName(e.target.value)} placeholder="e.g. Amitbhai Vijaybhai Patel" /></div>
+                <div style={{ gridColumn: "1 / -1" }}><label className="cms-label">Family Head Name *</label><input ref={autoFocusRef} autoFocus className="cms-input" value={headName} onChange={(e) => setHeadName(e.target.value.replace(/,/g, ' ').replace(/\s+/g, ' ').toUpperCase())} placeholder="(SURNAME NAME FATHER'S NAME)" /></div>
                 <div><label className="cms-label">Area</label><input className="cms-input" list="dl-area" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g. Govindpark" /></div>
                 <div><label className="cms-label">Phone</label><input className="cms-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Mobile number" /></div>
             </div>
@@ -84,7 +84,7 @@ function AddMemberForm({ db, onAdd, presetFamId, defaultRelation, onDoneWithPres
             )}
             {chosenFam && (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                    <div><label className="cms-label">Member Name *</label><input ref={presetFamId ? autoFocusRef : undefined} autoFocus={!!presetFamId} className="cms-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" /></div>
+                    <div><label className="cms-label">Member Name *</label><input ref={presetFamId ? autoFocusRef : undefined} autoFocus={!!presetFamId} className="cms-input" value={name} onChange={(e) => setName(e.target.value.replace(/,/g, ' ').replace(/\s+/g, ' ').toUpperCase())} placeholder="(SURNAME NAME FATHER'S NAME)" /></div>
                     <div><label className="cms-label">Relation to Head</label><input className="cms-input" list="dl-relation" value={relation} onChange={(e) => setRelation(e.target.value)} placeholder="e.g. Head, Wife, Son" /></div>
                     <div><label className="cms-label">Age</label><input className="cms-input" value={age} onChange={(e) => setAge(e.target.value)} /></div>
                     <div><label className="cms-label">Blood Group</label><input className="cms-input" list="dl-bloodgroup" value={bloodGroup} onChange={(e) => setBloodGroup(e.target.value)} /></div>
@@ -137,12 +137,16 @@ export default function RegisterView({ db, tab, setTab, onCreateFamily, onAddMem
 
     const matchedFamilies = Object.values(db.families).filter(f => {
         const q = listQuery.toLowerCase();
+        if (!q) return true;
         if (f.headName.toLowerCase().includes(q) || f.id.includes(q) || (f.area || "").toLowerCase().includes(q)) return true;
         for (const pat of Object.values(f.patients)) {
-            if (pat.name.toLowerCase().includes(q)) return true;
+            if (pat.name.toLowerCase().includes(q) || pat.id.includes(q)) return true;
         }
         return false;
     }).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+    // Auto-expand logic based on search
+    const activeExpFam = listQuery.length > 0 && matchedFamilies.length === 1 ? matchedFamilies[0].id : expandedFam;
     return (
         <div style={{ padding: 26, display: "flex", flexDirection: "column", gap: 20 }}>
             <div style={{ display: "flex", gap: 8 }}>
@@ -164,7 +168,7 @@ export default function RegisterView({ db, tab, setTab, onCreateFamily, onAddMem
                         <input className="cms-input" style={{ marginBottom: 12, padding: "6px 10px", fontSize: 13 }} placeholder="Search name, family ID..." value={listQuery} onChange={(e) => setListQuery(e.target.value)} />
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                             {matchedFamilies.map((f) => {
-                                const isExp = expandedFam === f.id;
+                                const isExp = activeExpFam === f.id;
                                 return (
                                     <div key={f.id} style={{ borderRadius: 10, background: "var(--surface-alt)", overflow: "hidden" }}>
                                         <div onClick={() => setExpandedFam(isExp ? null : f.id)} style={{ padding: "10px 12px", cursor: "pointer", display: "flex", justifyContent: "space-between" }}>
