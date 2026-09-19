@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Save, UserPlus, Trash2, Utensils } from "lucide-react";
 import { searchFamilies } from "./helpers";
-import { useSuggestions, Datalists } from "./components";
+import { useSuggestions, Datalists, AutocompleteInput } from "./components";
 
 function NewFamilyForm({ db, onCreate, autoFocusRef }) {
     const [headName, setHeadName] = useState("");
@@ -18,7 +18,7 @@ function NewFamilyForm({ db, onCreate, autoFocusRef }) {
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div style={{ gridColumn: "1 / -1" }}><label className="cms-label">Family Head Name *</label><input ref={autoFocusRef} autoFocus className="cms-input" value={headName} onChange={(e) => setHeadName(e.target.value.replace(/,/g, ' ').replace(/\s+/g, ' ').toUpperCase())} placeholder="(SURNAME NAME FATHER'S NAME)" /></div>
-                <div><label className="cms-label">Area</label><input className="cms-input" list="dl-area" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g. Govindpark" /></div>
+                <div><label className="cms-label">Area</label><AutocompleteInput className="cms-input" options={suggestions.area} value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g. Govindpark" /></div>
                 <div><label className="cms-label">Phone</label><input className="cms-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Mobile number" /></div>
             </div>
             <div><button type="submit" className="cms-btn-primary"><Save size={14} />Generate Family ID<span className="cms-kbd" style={{ marginLeft: 4 }}>Enter</span></button></div>
@@ -85,10 +85,10 @@ function AddMemberForm({ db, onAdd, presetFamId, defaultRelation, onDoneWithPres
             {chosenFam && (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                     <div><label className="cms-label">Member Name *</label><input ref={presetFamId ? autoFocusRef : undefined} autoFocus={!!presetFamId} className="cms-input" value={name} onChange={(e) => setName(e.target.value.replace(/,/g, ' ').replace(/\s+/g, ' ').toUpperCase())} placeholder="(SURNAME NAME FATHER'S NAME)" /></div>
-                    <div><label className="cms-label">Relation to Head</label><input className="cms-input" list="dl-relation" value={relation} onChange={(e) => setRelation(e.target.value)} placeholder="e.g. Head, Wife, Son" /></div>
+                    <div><label className="cms-label">Relation to Head</label><AutocompleteInput className="cms-input" options={suggestions.relation} value={relation} onChange={(e) => setRelation(e.target.value)} placeholder="e.g. Head, Wife, Son" /></div>
                     <div><label className="cms-label">Age</label><input className="cms-input" value={age} onChange={(e) => setAge(e.target.value)} /></div>
-                    <div><label className="cms-label">Blood Group</label><input className="cms-input" list="dl-bloodgroup" value={bloodGroup} onChange={(e) => setBloodGroup(e.target.value)} /></div>
-                    <div style={{ gridColumn: "1 / -1" }}><label className="cms-label">Allergy</label><input className="cms-input" list="dl-allergy" value={allergy} onChange={(e) => setAllergy(e.target.value)} /></div>
+                    <div><label className="cms-label">Blood Group</label><AutocompleteInput className="cms-input" options={suggestions.bloodGroup} value={bloodGroup} onChange={(e) => setBloodGroup(e.target.value)} /></div>
+                    <div style={{ gridColumn: "1 / -1" }}><label className="cms-label">Allergy</label><AutocompleteInput className="cms-input" options={suggestions.allergy} value={allergy} onChange={(e) => setAllergy(e.target.value)} /></div>
                 </div>
             )}
             <div style={{ display: "flex", gap: 10 }}>

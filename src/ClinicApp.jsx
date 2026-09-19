@@ -11,6 +11,7 @@ import PrescriptionPrintModal from "./PrintModal";
 export default function ClinicApp() {
   const [db, setDb] = useState(null);
   const [view, setView] = useState("dashboard"); // dashboard, register, case, reports
+  const [theme, setTheme] = useState(() => localStorage.getItem("clinic_theme") || "light");
   const [toast, setToast] = useState(null);
   const [printData, setPrintData] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -64,24 +65,47 @@ export default function ClinicApp() {
   const handleGlobalSearch = (q) => {
     if (!db || !q.trim()) return;
     const query = q.trim().toLowerCase();
-    const matches = Object.values(db.families).filter(f => f.headName.toLowerCase().includes(query) || f.id.toLowerCase().includes(query) || (f.area || "").toLowerCase().includes(query));
-    if (matches.length > 0) {
-      setSelection({ familyId: matches[0].id, patientId: Object.keys(matches[0].patients)[0] || null });
+
+    let found = null;
+    const allFamilies = Object.values(db.families);
+
+    // Check patients first for exact direct hits or name links
+    for (const fam of allFamilies) {
+      for (const p of Object.values(fam.patients)) {
+        if (p.id.toLowerCase() === query || p.name.toLowerCase().includes(query)) {
+          found = { familyId: fam.id, patientId: p.id };
+          break;
+        }
+      }
+      if (found) break;
+
+      // Fallback to family search
+      if (fam.id.toLowerCase() === query || fam.headName.toLowerCase().includes(query) || (fam.area || "").toLowerCase().includes(query)) {
+        found = { familyId: fam.id, patientId: Object.keys(fam.patients)[0] || null };
+      }
+    }
+
+    if (found) {
+      setSelection(found);
       setView("case");
       setTopQuery("");
     } else {
-      showToast("No family found matching search.", "error");
+      showToast("No matching record found.", "error");
     }
   };
 
   /* ---- Data Actions ---- */
   const createFamily = (headName, area, phone) => {
     const nextId = pad(db.counters.family, 4); // "0002"
-    const fam = { id: nextId, headName, area, phone, createdAt: new Date().toISOString(), patients: {} };
-    saveDb({ ...db, counters: { ...db.counters, family: db.counters.family + 1 }, families: { ...db.families, [nextId]: fam } });
-    showToast(`Family ID ${nextId} generated for ${headName}`);
-    setRegTab("member");
-    setSelection({ familyId: nextId, patientId: null });
+    const nextPatId = pad(db.counters.patient, 4);
+
+    const pat = { id: nextPatId, name: headName, relation: "Head", age: "", bloodGroup: "", allergy: "", visits: [] };
+    const fam = { id: nextId, headName, area, phone, createdAt: new Date().toISOString(), patients: { [nextPatId]: pat } };
+
+    saveDb({ ...db, counters: { ...db.counters, family: db.counters.family + 1, patient: db.counters.patient + 1 }, families: { ...db.families, [nextId]: fam } });
+    showToast(`Family ID ${nextId} generated, patient ${nextPatId} added`);
+    setSelection({ familyId: nextId, patientId: nextPatId });
+    setView("case");
   };
 
   const addMember = (famId, data) => {
@@ -91,24 +115,21 @@ export default function ClinicApp() {
     fam.patients[nextPatId] = pat;
     saveDb({ ...db, counters: { ...db.counters, patient: db.counters.patient + 1 }, families: { ...db.families, [famId]: fam } });
     showToast(`${data.name} added to family ${famId}`);
-    // Auto-select and go to case view on first member creation if from quick-add flow, otherwise stay on member creation
-    if (Object.keys(fam.patients).length === 1 && view === "case") {
-      setSelection({ familyId: famId, patientId: nextPatId });
-    }
+    // Auto-select and go to case view for the newly added member instantly
+    setSelection({ familyId: famId, patientId: nextPatId });
+    setView("case");
   };
 
   const addVisit = (famId, patId, visitData) => {
     const fam = db.families[famId];
     const pat = fam.patients[patId];
-    // Next visit count for this patient
     const vCount = pat.visits.length + 1;
-    const caseId = makeCaseId(famId, patId, vCount); // 6 digits
-
+    const caseId = makeCaseId(famId, patId, vCount);
     const visit = { id: uid(), caseId, visitNum: vCount, ...visitData };
     pat.visits = [...pat.visits, visit];
-
     saveDb({ ...db, counters: { ...db.counters, visit: db.counters.visit + 1 }, families: { ...db.families, [famId]: fam } });
     showToast(`Visit saved for ${pat.name}! Case ${caseId}`);
+    return visit;
   };
 
   const updateVisit = (famId, patId, visitId, updateData) => {
@@ -168,12 +189,12 @@ export default function ClinicApp() {
   if (!db) return <div style={{ padding: 40, fontFamily: "Inter, sans-serif" }}>Loading Clinic DB...</div>;
 
   return (
-    <div className="cms-root" style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
+    <div className={`cms-root ${theme}`} style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
       <GlobalStyle />
       <Sidebar view={view} setView={setView} isOpen={sidebarOpen} />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-        <TopBar query={topQuery} setQuery={setTopQuery} onSearchSubmit={handleGlobalSearch} db={db} toggleSidebar={() => setSidebarOpen(s => !s)} />
+        <TopBar query={topQuery} setQuery={setTopQuery} onSearchSubmit={handleGlobalSearch} db={db} toggleSidebar={() => setSidebarOpen(s => !s)} theme={theme} setTheme={(t) => { setTheme(t); localStorage.setItem("clinic_theme", t); }} />
 
         <div className="cms-scrollbar" style={{ flex: 1, overflowY: "auto", position: "relative" }}>
           {view === "dashboard" && <Dashboard db={db} goToPatient={(famId, patId) => { setSelection({ familyId: famId, patientId: patId }); setView("case"); }} />}

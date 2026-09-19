@@ -1,7 +1,7 @@
 import React from "react";
 
 export const GlobalStyle = () => (
-    <style>{`
+  <style>{`
     .cms-root {
       --bg: #F6FAF9;
       --surface: #FFFFFF;
@@ -16,9 +16,44 @@ export const GlobalStyle = () => (
       --text: #1B2B29;
       --text-muted: #5E7572;
       --border: #DCEAE7;
+      
+      --pill-bp-bg: #fff3e0; --pill-bp-bd: #ffe0b2; --pill-bp-tx: #e65100;
+      --pill-su-bg: #e3f2fd; --pill-su-bd: #bbdefb; --pill-su-tx: #1565c0;
+      --pill-ot-bg: #fffde7; --pill-ot-bd: #fff59d; --pill-ot-tx: #f57f17;
+      --pill-rf-bg: #fce4ec; --pill-rf-bd: #f8bbd0; --pill-rf-tx: #c2185b;
+      --pill-in-bg: #e8f5e9; --pill-in-bd: #c8e6c9; --pill-in-tx: #2e7d32;
+      --pill-co-bg: #f3e5f5; --pill-co-bd: #e1bee7; --pill-co-tx: #7b1fa2;
+      --pill-tr-bg: #ffebee; --pill-tr-bd: #ffcdd2; --pill-tr-tx: #c62828;
+      --pill-pr-bg: #e0f7fa; --pill-pr-bd: #b2ebf2; --pill-pr-tx: #006064;
+
       font-family: 'Inter', -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
+    }
+
+    .cms-root.dark {
+      --bg: #0C1210;
+      --surface: #131E1B;
+      --surface-alt: #182823;
+      --primary: #19806C;
+      --primary-dark: #20A68D;
+      --primary-soft: #143029;
+      --accent: #D98E3F;
+      --accent-soft: #382717;
+      --danger: #D65A4F;
+      --danger-soft: #421D1A;
+      --text: #F2F5F4;
+      --text-muted: #95A9A7;
+      --border: #213531;
+
+      --pill-bp-bg: #3E1600; --pill-bp-bd: #682600; --pill-bp-tx: #FF9800;
+      --pill-su-bg: #03244D; --pill-su-bd: #064082; --pill-su-tx: #64B5F6;
+      --pill-ot-bg: #3B3000; --pill-ot-bd: #665200; --pill-ot-tx: #FFD54F;
+      --pill-rf-bg: #40041B; --pill-rf-bd: #750731; --pill-rf-tx: #F06292;
+      --pill-in-bg: #08290D; --pill-in-bd: #0F4A18; --pill-in-tx: #81C784;
+      --pill-co-bg: #270533; --pill-co-bd: #4A0B61; --pill-co-tx: #BA68C8;
+      --pill-tr-bg: #3E0C10; --pill-tr-bd: #7A1920; --pill-tr-tx: #E57373;
+      --pill-pr-bg: #00282E; --pill-pr-bd: #004F5C; --pill-pr-tx: #4DD0E1;
     }
     .cms-root .font-display { font-family: 'Manrope', 'Inter', sans-serif; }
     .cms-root .font-mono { font-family: 'IBM Plex Mono', monospace; }

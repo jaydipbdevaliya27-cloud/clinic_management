@@ -25,7 +25,7 @@ export default function Dashboard({ db, goToPatient }) {
     const duesList = rows.filter((r) => r.totalDue > 0).sort((a, b) => b.totalDue - a.totalDue);
 
     return (
-        <div style={{ padding: 26, display: "flex", flexDirection: "column", gap: 20 }}>
+        <div style={{ padding: "12px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <Calendar size={18} color="var(--primary)" />
@@ -33,15 +33,15 @@ export default function Dashboard({ db, goToPatient }) {
                     <input type="date" className="cms-input" style={{ width: 140, padding: "6px 12px", marginLeft: 10 }} value={dateFilter} onChange={e => { setDateFilter(e.target.value); setActiveView("visits"); }} />
                 </div>
             </div>
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <div onClick={() => setActiveView("families")} style={{ flex: 1, cursor: "pointer", opacity: activeView === "families" ? 1 : 0.8, border: activeView === "families" ? "2px solid var(--primary)" : "2px solid transparent", borderRadius: 18 }}><StatCard icon={Users} label="Registered Families" value={totalFamilies} /></div>
                 <div onClick={() => setActiveView("patients")} style={{ flex: 1, cursor: "pointer", opacity: activeView === "patients" ? 1 : 0.8, border: activeView === "patients" ? "2px solid var(--primary)" : "2px solid transparent", borderRadius: 18 }}><StatCard icon={Activity} label="Total Patients" value={totalPatients} /></div>
                 <div onClick={() => setActiveView("visits")} style={{ flex: 1, cursor: "pointer", opacity: activeView === "visits" ? 1 : 0.8, border: activeView === "visits" ? "2px solid var(--accent)" : "2px solid transparent", borderRadius: 18 }}><StatCard icon={ClipboardList} label="Date's Visits" value={targetVisits.length} tone="accent" /></div>
                 <div style={{ flex: 1 }}><StatCard icon={IndianRupee} label="Date's Collection" value={fmtMoney(dateCollection)} /></div>
                 <div onClick={() => setActiveView("dues")} style={{ flex: 1, cursor: "pointer", opacity: activeView === "dues" ? 1 : 0.8, border: activeView === "dues" ? "2px solid var(--danger)" : "2px solid transparent", borderRadius: 18 }}><StatCard icon={AlertCircle} label="Total Outstanding Dues" value={fmtMoney(totalDue)} tone="danger" /></div>
             </div>
-            <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
-                <div className="cms-card" style={{ flex: 1.4, padding: 18 }}>
+            <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                <div className="cms-card" style={{ flex: 1.4, padding: 12 }}>
 
                     {activeView === "visits" && (
                         <>
@@ -132,13 +132,13 @@ export default function Dashboard({ db, goToPatient }) {
                     )}
                 </div>
                 {activeView !== "dues" && (
-                    <div className="cms-card" style={{ flex: 1, padding: 18 }}>
+                    <div className="cms-card" style={{ flex: 1, padding: 12 }}>
                         <div className="font-display" style={{ fontWeight: 800, fontSize: 14.5, marginBottom: 10 }}>Top Outstanding Dues</div>
                         {duesList.length === 0 && <div style={{ color: "var(--text-muted)", fontSize: 13, padding: "10px 0" }}>Nobody owes anything right now.</div>}
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                             {duesList.map(({ fam, pat, totalDue }) => (
-                                <div key={pat.id} onClick={() => goToPatient(fam.id, pat.id)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 12px", borderRadius: 10, background: "var(--surface-alt)", cursor: "pointer" }}>
-                                    <div><div style={{ fontSize: 13, fontWeight: 700 }}>{pat.name}</div><div style={{ fontSize: 11, color: "var(--text-muted)" }}>{fam.headName} &middot; Fam {fam.id}</div></div>
+                                <div key={pat.id} onClick={() => goToPatient(fam.id, pat.id)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 8px", borderRadius: 8, background: "var(--surface-alt)", cursor: "pointer" }}>
+                                    <div><div style={{ fontSize: 12.5, fontWeight: 700 }}>{pat.name}</div><div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{fam.headName} &middot; Fam {fam.id}</div></div>
                                     <span className="cms-pill cms-badge-due">{fmtMoney(totalDue)}</span>
                                 </div>
                             ))}
