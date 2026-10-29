@@ -8,7 +8,7 @@ import CaseEntryView from "./CaseEntryView";
 import ReportsView from "./ReportsView";
 import PrescriptionPrintModal from "./PrintModal";
 
-export default function ClinicApp() {
+export default function ClinicApp({ doctorProfile, onLogout, onUpdateDoctorProfile }) {
   const [db, setDb] = useState(null);
   const [view, setView] = useState("dashboard"); // dashboard, register, case, reports
   const [theme, setTheme] = useState(() => localStorage.getItem("clinic_theme") || "light");
@@ -23,19 +23,38 @@ export default function ClinicApp() {
   const [regTab, setRegTab] = useState("family"); // family, member, dietary
   const actionsRef = useRef({ newVisit: null, print: null });
 
-  // Persistence (localStorage)
+  // Persistence (localStorage) - Dynamic DB based on doctor
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("clinic-db-demo");
+      if (!doctorProfile) return;
+      const dbKey = `clinic-db-${doctorProfile.activeClinicId}`;
+      const stored = localStorage.getItem(dbKey);
       if (stored) { setDb(JSON.parse(stored)); }
-      else { const init = seedDB(); setDb(init); localStorage.setItem("clinic-db-demo", JSON.stringify(init)); }
+      else {
+        let init;
+        if (doctorProfile.activeClinicId === 'demo') {
+          init = seedDB();
+        } else {
+          // Start empty data for new doctor clinics
+          init = {
+            families: {}, dietary: {},
+            counters: { family: 1, patient: 1, visit: 1 }
+          };
+        }
+        setDb(init);
+        localStorage.setItem(dbKey, JSON.stringify(init));
+      }
     } catch (e) {
       console.error("Storage error:", e);
-      setDb(seedDB());
     }
-  }, []);
+  }, [doctorProfile]);
 
-  const saveDb = (newDb) => { setDb(newDb); localStorage.setItem("clinic-db-demo", JSON.stringify(newDb)); };
+  const saveDb = (newDb) => {
+    if (!doctorProfile) return;
+    const dbKey = `clinic-db-${doctorProfile.activeClinicId}`;
+    setDb(newDb);
+    localStorage.setItem(dbKey, JSON.stringify(newDb));
+  };
   const showToast = (msg, type = "success") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3000); };
 
   // Keyboard Navigation
@@ -194,7 +213,7 @@ export default function ClinicApp() {
       <Sidebar view={view} setView={setView} isOpen={sidebarOpen} />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-        <TopBar query={topQuery} setQuery={setTopQuery} onSearchSubmit={handleGlobalSearch} db={db} toggleSidebar={() => setSidebarOpen(s => !s)} theme={theme} setTheme={(t) => { setTheme(t); localStorage.setItem("clinic_theme", t); }} />
+        <TopBar query={topQuery} setQuery={setTopQuery} onSearchSubmit={handleGlobalSearch} db={db} toggleSidebar={() => setSidebarOpen(s => !s)} theme={theme} setTheme={(t) => { setTheme(t); localStorage.setItem("clinic_theme", t); }} doctorProfile={doctorProfile} onLogout={onLogout} onUpdateDoctorProfile={onUpdateDoctorProfile} />
 
         <div className="cms-scrollbar" style={{ flex: 1, overflowY: "auto", position: "relative" }}>
           {view === "dashboard" && <Dashboard db={db} goToPatient={(famId, patId) => { setSelection({ familyId: famId, patientId: patId }); setView("case"); }} />}

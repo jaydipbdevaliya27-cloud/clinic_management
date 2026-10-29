@@ -4,6 +4,7 @@ import {
     ClipboardList, BarChart3, Menu, Moon, Sun
 } from "lucide-react";
 import { todayISO, fmtDate, nowTime } from "./helpers";
+import DoctorProfileDropdown from "./DoctorProfileDropdown";
 
 /* ---- Datalist suggestions hook ---- */
 export function useSuggestions(db) {
@@ -230,7 +231,8 @@ export function Sidebar({ view, setView, isOpen }) {
     );
 }
 
-export function TopBar({ query, setQuery, onSearchSubmit, db, toggleSidebar, theme, setTheme }) {
+export function TopBar({ query, setQuery, onSearchSubmit, db, toggleSidebar, theme, setTheme, doctorProfile, onLogout, onUpdateDoctorProfile }) {
+    const [profileOpen, setProfileOpen] = useState(false);
     const suggestions = db ? useSuggestions(db) : { globalSearch: [] };
     return (
         <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "14px 26px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
@@ -238,28 +240,63 @@ export function TopBar({ query, setQuery, onSearchSubmit, db, toggleSidebar, the
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <button className="cms-btn-ghost" style={{ padding: 6, display: "flex" }} onClick={toggleSidebar}><Menu size={20} /></button>
                 <div>
-                    <div className="font-display" style={{ fontWeight: 800, fontSize: 17 }}>Dhyey Clinic &middot; Patient Management</div>
+                    <div className="font-display" style={{ fontWeight: 800, fontSize: 17 }}>
+                        {doctorProfile ? `${(doctorProfile.clinics || []).find(c => c.id === doctorProfile.activeClinicId)?.name || "Clinic"} (Dr. ${doctorProfile.username})` : 'Clinic Management'}
+                    </div>
                     <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{fmtDate(todayISO())}</div>
                 </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, width: 440 }}>
-                <form onSubmit={(e) => { e.preventDefault(); onSearchSubmit(query); }} style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <form onSubmit={(e) => { e.preventDefault(); onSearchSubmit(query); }} style={{ display: "flex", alignItems: "center", gap: 8, width: 280 }}>
                     <div style={{ position: "relative", flex: 1 }}>
                         <Search size={15} style={{ position: "absolute", left: 10, top: 10, color: "var(--text-muted)" }} />
-                        <input id="cms-top-search" list="dl-global-search" className="cms-input" style={{ paddingLeft: 32, paddingRight: 46 }} placeholder="Search family name, patient ID, area..." value={query} onChange={(e) => setQuery(e.target.value)} />
+                        <input id="cms-top-search" list="dl-global-search" className="cms-input" style={{ paddingLeft: 32, paddingRight: 46, width: "100%" }} placeholder="Search..." value={query} onChange={(e) => setQuery(e.target.value)} />
                         <span className="cms-kbd" style={{ position: "absolute", right: 8, top: 8 }}>/</span>
                     </div>
                     <button type="submit" className="cms-btn-primary"><Search size={14} />Go</button>
                 </form>
-                <div style={{ borderLeft: "1px solid var(--border)", height: 24 }} />
+
+                <div style={{ borderLeft: "1px solid var(--border)", height: 24, margin: "0 4px" }} />
+
                 <button
                     className="cms-btn-ghost"
                     onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                    style={{ padding: 8, borderRadius: "50%", width: 36, height: 36, justifyContent: "center" }}
+                    style={{ padding: 8, borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center" }}
                     title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
                 >
                     {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
                 </button>
+
+                {doctorProfile && (
+                    <div style={{ display: "flex", alignItems: "center", borderLeft: "1px solid var(--border)", paddingLeft: 16, marginLeft: 4, position: "relative" }}>
+                        <button
+                            className="cms-btn-ghost"
+                            onClick={() => setProfileOpen(!profileOpen)}
+                            style={{ padding: "6px 12px", borderRadius: 8, display: "flex", gap: 6, fontSize: 13, height: 34, color: "var(--primary)" }}
+                        >
+                            Dr. {doctorProfile.username}
+                        </button>
+                        {profileOpen && (
+                            <DoctorProfileDropdown
+                                doctorProfile={doctorProfile}
+                                onClose={() => setProfileOpen(false)}
+                                onUpdate={onUpdateDoctorProfile}
+                                onLogout={onLogout}
+                            />
+                        )}
+                    </div>
+                )}
+                {!doctorProfile && onLogout && (
+                    <div style={{ display: "flex", alignItems: "center", borderLeft: "1px solid var(--border)", paddingLeft: 16, marginLeft: 4 }}>
+                        <button
+                            className="cms-btn-danger"
+                            onClick={onLogout}
+                            style={{ padding: "6px 12px", borderRadius: 8, display: "flex", gap: 6, fontSize: 13, height: 34 }}
+                        >
+                            Logout
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
