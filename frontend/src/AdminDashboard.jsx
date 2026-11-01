@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { PlusCircle, Building, User, LogOut, Key, Trash2, LogIn } from "lucide-react";
-import { uid } from "./helpers";
+import { getDoctors, createDoctor, deleteDoctor } from "./api";
 import { Toast } from "./components";
 import { GlobalStyle } from "./theme";
 
 export default function AdminDashboard({ onLogout, onLoginAsDoctor }) {
-    const [masterDb, setMasterDb] = useState({ doctors: [] });
+    const [doctors, setDoctors] = useState([]);
     const [toast, setToast] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     // New Doctor Form State
     const [clinicName, setClinicName] = useState("");
@@ -14,18 +15,10 @@ export default function AdminDashboard({ onLogout, onLoginAsDoctor }) {
     const [password, setPassword] = useState("");
 
     useEffect(() => {
-        try {
-            const stored = localStorage.getItem("clinic-master-db");
-            if (stored) {
-                setMasterDb(JSON.parse(stored));
-            } else {
-                const init = { doctors: [] };
-                localStorage.setItem("clinic-master-db", JSON.stringify(init));
-                setMasterDb(init);
-            }
-        } catch (e) {
-            console.error("Storage error:", e);
-        }
+        getDoctors()
+            .then(setDoctors)
+            .catch(() => showToast("Failed to load doctors.", "error"))
+            .finally(() => setLoading(false));
     }, []);
 
     const showToast = (msg, type = "success") => {
@@ -33,49 +26,30 @@ export default function AdminDashboard({ onLogout, onLoginAsDoctor }) {
         setTimeout(() => setToast(null), 3000);
     };
 
-    const saveDb = (newDb) => {
-        setMasterDb(newDb);
-        localStorage.setItem("clinic-master-db", JSON.stringify(newDb));
-    };
-
-    const handleCreateDoctor = (e) => {
+    const handleCreateDoctor = async (e) => {
         e.preventDefault();
         if (!username.trim() || !password || !clinicName.trim()) {
             showToast("All fields are required.", "error");
             return;
         }
-
-        // Check if username exists
-        if (masterDb.doctors.some(d => d.username === username.trim())) {
-            showToast("Username already exists.", "error");
-            return;
+        try {
+            const newDoctor = await createDoctor({ username: username.trim(), password, clinicName: clinicName.trim() });
+            setDoctors(prev => [...prev, newDoctor]);
+            setUsername(""); setPassword(""); setClinicName("");
+            showToast("Doctor account created successfully!");
+        } catch (err) {
+            showToast(err.response?.data?.message || "Failed to create doctor.", "error");
         }
-
-        const clinicId = uid();
-        const newDoctor = {
-            id: uid(),
-            username: username.trim(),
-            password: password,
-            clinics: [{ id: clinicId, name: clinicName.trim() }],
-            activeClinicId: clinicId,
-            createdAt: new Date().toISOString()
-        };
-
-        const nextDb = { ...masterDb, doctors: [...masterDb.doctors, newDoctor] };
-        saveDb(nextDb);
-
-        // Reset Form
-        setUsername("");
-        setPassword("");
-        setClinicName("");
-        showToast("Doctor account created successfully!");
     };
 
-    const handleDeleteDoctor = (doctorId) => {
-        if (window.confirm("Are you sure you want to delete this doctor? Their data will still remain in localStorage, but they won't be able to log in.")) {
-            const nextDb = { ...masterDb, doctors: masterDb.doctors.filter(d => d.id !== doctorId) };
-            saveDb(nextDb);
+    const handleDeleteDoctor = async (doctorId) => {
+        if (!window.confirm("Are you sure you want to delete this doctor?")) return;
+        try {
+            await deleteDoctor(doctorId);
+            setDoctors(prev => prev.filter(d => d._id !== doctorId));
             showToast("Doctor deleted.", "error");
+        } catch {
+            showToast("Failed to delete doctor.", "error");
         }
     };
 
@@ -103,18 +77,20 @@ export default function AdminDashboard({ onLogout, onLoginAsDoctor }) {
                     <div>
                         <h2 className="font-display" style={{ margin: "0 0 20px 0", fontSize: 20 }}>Registered Clinics</h2>
 
-                        {masterDb.doctors.length === 0 ? (
+                        {loading ? (
+                            <div className="cms-card" style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>Loading...</div>
+                        ) : doctors.length === 0 ? (
                             <div className="cms-card" style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>
                                 No doctors registered yet. Add one from the panel.
                             </div>
                         ) : (
                             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                                {masterDb.doctors.map(doc => (
-                                    <div key={doc.id} className="cms-card" style={{ padding: 20, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                {doctors.map(doc => (
+                                    <div key={doc._id} className="cms-card" style={{ padding: 20, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                                         <div>
                                             <div style={{ fontWeight: 600, color: "var(--text-main)", fontSize: 16, marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
                                                 <Building size={16} style={{ color: "var(--accent)" }} />
-                                                {doc.clinics ? doc.clinics.map(c => c.name).join(", ") : (doc.clinicName || "Unknown Clinic")}
+                                                {doc.clinics ? doc.clinics.map(c => c.name).join(", ") : "Unknown Clinic"}
                                             </div>
                                             <div style={{ fontSize: 14, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 16 }}>
                                                 <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -130,7 +106,7 @@ export default function AdminDashboard({ onLogout, onLoginAsDoctor }) {
                                             <button className="cms-btn-ghost" onClick={() => onLoginAsDoctor(doc)} style={{ padding: 8, color: "var(--primary)" }}>
                                                 <LogIn size={16} /> Enter
                                             </button>
-                                            <button className="cms-btn-danger" onClick={() => handleDeleteDoctor(doc.id)} style={{ padding: 8 }}>
+                                            <button className="cms-btn-danger" onClick={() => handleDeleteDoctor(doc._id)} style={{ padding: 8 }}>
                                                 <Trash2 size={16} />
                                             </button>
                                         </div>
@@ -148,30 +124,15 @@ export default function AdminDashboard({ onLogout, onLoginAsDoctor }) {
                             <form onSubmit={handleCreateDoctor} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                                 <div>
                                     <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 6 }}>Clinic Name</label>
-                                    <input
-                                        type="text"
-                                        value={clinicName} onChange={e => setClinicName(e.target.value)}
-                                        className="cms-input" style={{ width: "100%" }}
-                                        placeholder="e.g. City Care Clinic"
-                                    />
+                                    <input type="text" value={clinicName} onChange={e => setClinicName(e.target.value)} className="cms-input" style={{ width: "100%" }} placeholder="e.g. City Care Clinic" />
                                 </div>
                                 <div>
                                     <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 6 }}>Username</label>
-                                    <input
-                                        type="text"
-                                        value={username} onChange={e => setUsername(e.target.value)}
-                                        className="cms-input" style={{ width: "100%" }}
-                                        placeholder="Doctor's login username"
-                                    />
+                                    <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="cms-input" style={{ width: "100%" }} placeholder="Doctor's login username" />
                                 </div>
                                 <div>
                                     <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 6 }}>Password</label>
-                                    <input
-                                        type="text"
-                                        value={password} onChange={e => setPassword(e.target.value)}
-                                        className="cms-input" style={{ width: "100%" }}
-                                        placeholder="Doctor's login password"
-                                    />
+                                    <input type="text" value={password} onChange={e => setPassword(e.target.value)} className="cms-input" style={{ width: "100%" }} placeholder="Doctor's login password" />
                                 </div>
                                 <button type="submit" className="cms-btn-primary" style={{ marginTop: 8, justifyContent: "center" }}>
                                     <PlusCircle size={16} />

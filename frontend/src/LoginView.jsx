@@ -1,46 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { User, Lock, LogIn, Activity } from "lucide-react";
+import { login } from "./api";
 
 export default function LoginView({ onLogin }) {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        const stored = localStorage.getItem("clinic-master-db");
-        let parsed = stored ? JSON.parse(stored) : { doctors: [] };
-        if (!parsed.doctors) parsed.doctors = [];
-
-        let needsSave = false;
-
-        // Migrate legacy 1:1 format to 1:N architecture dynamically
-        parsed.doctors = parsed.doctors.map(d => {
-            if (!d.clinics) {
-                d.clinics = [{ id: d.id, name: d.clinicName || "My Clinic" }];
-                d.activeClinicId = d.id;
-                delete d.clinicName;
-                needsSave = true;
-            }
-            return d;
-        });
-
-        // Seed Dhyey Clinic if it does not exist to retain old 'demo' DB
-        const hasDemo = parsed.doctors.some(d => d.id === "demo");
-        if (!hasDemo) {
-            parsed.doctors.push({
-                id: "demo", username: "dhyey", password: "123",
-                clinics: [{ id: "demo", name: "Dhyey Clinic" }],
-                activeClinicId: "demo"
-            });
-            needsSave = true;
-        }
-
-        if (needsSave) {
-            localStorage.setItem("clinic-master-db", JSON.stringify(parsed));
-        }
-    }, []);
-
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
 
@@ -49,28 +17,17 @@ export default function LoginView({ onLogin }) {
             return;
         }
 
-        // Admin Hardcoded Check
-        if (username === "admin" && password === "admin") {
-            onLogin({ role: "admin" });
-            return;
-        }
-
-        // Doctor Check from master DB
+        setLoading(true);
         try {
-            const stored = localStorage.getItem("clinic-master-db");
-            if (stored) {
-                const masterDb = JSON.parse(stored);
-                const doctor = masterDb.doctors.find(d => d.username === username && d.password === password);
-                if (doctor) {
-                    onLogin({ role: "doctor", profile: doctor });
-                    return;
-                }
-            }
-        } catch (e) {
-            console.error(e);
+            const data = await login(username, password);
+            // data = { token, role, profile? }
+            onLogin(data);
+        } catch (err) {
+            const msg = err.response?.data?.message || "Invalid username or password.";
+            setError(msg);
+        } finally {
+            setLoading(false);
         }
-
-        setError("Invalid username or password.");
     };
 
     return (
@@ -185,6 +142,7 @@ export default function LoginView({ onLogin }) {
 
                     <button
                         type="submit"
+                        disabled={loading}
                         style={{
                             marginTop: 12,
                             height: 48,
@@ -196,18 +154,19 @@ export default function LoginView({ onLogin }) {
                             borderRadius: 12,
                             fontWeight: 700,
                             fontSize: 16,
-                            cursor: "pointer",
+                            cursor: loading ? "not-allowed" : "pointer",
+                            opacity: loading ? 0.7 : 1,
                             display: "flex",
                             alignItems: "center",
                             gap: 8,
                             boxShadow: "0 10px 30px rgba(121, 40, 202, 0.4)",
                             transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                         }}
-                        onMouseEnter={(e) => { e.target.style.transform = "translateY(-3px)"; e.target.style.boxShadow = "0 15px 40px rgba(121, 40, 202, 0.6)"; }}
-                        onMouseLeave={(e) => { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = "0 10px 30px rgba(121, 40, 202, 0.4)"; }}
+                        onMouseEnter={(e) => { if (!loading) { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 15px 40px rgba(121, 40, 202, 0.6)"; } }}
+                        onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 10px 30px rgba(121, 40, 202, 0.4)"; }}
                     >
                         <LogIn size={18} />
-                        Sign In
+                        {loading ? "Signing in..." : "Sign In"}
                     </button>
                 </form>
             </div>

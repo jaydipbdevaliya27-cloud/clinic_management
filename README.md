@@ -1,32 +1,85 @@
-# Dhyey Clinic Management System
+# Clinic Management System
 
-A modern, fast, and fully offline-capable Patient & Clinic Management System built with React and Vite.
+A full-stack clinic management system with:
 
-## Features
-- **Family & Patient Registration:** Manage patients grouped by families uniquely identified by custom generated IDs (FAM XXXX, PT XXXX).
-- **Patient Records & Visit Histories:** Searchable UI to view detailed records of all past patient visits (Diagnosis, BP, Weight, Complaints, Treatment, Prescriptions).
-- **Robust Financial Tracking:** Tracks custom bills, amounts received, and balances due.
-- **Reporting Analytics:** Generate 9 distinct dynamic reports (Daily Income, Patient Dues, Area-wise, Diagnosis-wise, Medical Certificates, etc).
-- **Multilingual Prescription Generation:** Print beautiful prescriptions automatically localized to English, Hindi, or Gujarati.
-- **Dietary Advice Library:** Create shortcut codes (e.g., "DB", "CV") for diet plans that can instantly be appended to prescriptions.
+- **`backend/`** — Node.js + Express REST API with MongoDB (Mongoose)
+- **`frontend/`** — React + Vite SPA
 
-## Hosting & Deployment (Render)
-This project is configured out of the box to be hosted on [Render](https://render.com).
+---
 
-### Option 1: Render Blueprint (Recommended)
-1. Commit and push this project to a GitHub repository.
-2. Log into Render and click **New -> Blueprint**.
-3. Select your repository. Render will automatically read the included `render.yaml` file and deploy the system perfectly as a static site.
+## Quick Start
 
-### Option 2: Render Static Site
-1. Create a **New Static Site** on Render.
-2. Set the Build Command to: `npm install && npm run build`
-3. Set the Publish Directory to: `dist`
+### 1. Prerequisites
+- Node.js 18+
+- MongoDB running locally on `mongodb://localhost:27017` (or set your Atlas URI in `backend/.env`)
 
-## Local Development
-1. Install dependencies: `npm install`
-2. Start development server: `npm run dev`
-3. Build for production: `npm run build`
+### 2. Backend Setup
 
-## Data Storage
-The system is designed to run in a browser and heavily utilizes standard browser `localStorage` under the `clinic-db` key. In production, ensure users do not arbitrarily clear their browser data, or routinely export the DB state.
+```bash
+cd backend
+npm install
+npm run seed      # Populate MongoDB with demo data (dhyey/123)
+npm run dev       # Start backend on http://localhost:5000
+```
+
+### 3. Frontend Setup
+
+Open a **new terminal**:
+
+```bash
+cd frontend
+npm install
+npm run dev       # Start frontend on http://localhost:5173
+```
+
+### 4. Open
+
+Visit `http://localhost:5173`
+
+| Login | Username | Password |
+|-------|----------|----------|
+| Admin | `admin`  | `admin`  |
+| Demo Doctor | `dhyey` | `123` |
+
+---
+
+## Project Structure
+
+```
+clinic_management/
+├── backend/
+│   ├── models/          # Mongoose schemas (Doctor, Family, Patient, Visit, Dietary, Counter)
+│   ├── routes/          # Express routers (auth, admin, families, patients, visits, dietary)
+│   ├── middleware/       # JWT auth guard
+│   ├── utils/helpers.js # Shared utility functions
+│   ├── seed.js          # Demo data seeder
+│   ├── server.js        # Entry point
+│   ├── .env             # MongoDB URI, JWT_SECRET, PORT
+│   └── package.json
+│
+├── frontend/
+│   ├── src/
+│   │   ├── api.js       # Centralized Axios API client (all HTTP calls)
+│   │   ├── App.jsx      # Root app + auth routing
+│   │   ├── LoginView.jsx
+│   │   ├── AdminDashboard.jsx
+│   │   ├── ClinicApp.jsx  # Main clinic shell
+│   │   ├── Dashboard.jsx
+│   │   ├── RegisterView.jsx
+│   │   ├── CaseEntryView.jsx
+│   │   ├── ReportsView.jsx
+│   │   └── ...
+│   ├── index.html
+│   ├── vite.config.js   # /api proxy → localhost:5000
+│   └── package.json
+└── README.md
+```
+
+## Environment Variables (`backend/.env`)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `5000` | Backend server port |
+| `MONGO_URI` | `mongodb://localhost:27017/clinic_management` | MongoDB connection URI |
+| `JWT_SECRET` | _(set a strong value in production)_ | JWT signing secret |
+| `JWT_EXPIRES_IN` | `7d` | JWT expiry |

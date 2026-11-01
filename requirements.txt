@@ -1,3 +1,0 @@
-# This is a React/Node.js project. 
-# Dependencies are managed via package.json.
-# This file is provided for environment compatibility if required by the host.
