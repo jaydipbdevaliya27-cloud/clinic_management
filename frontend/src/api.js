@@ -2,9 +2,25 @@ import axios from 'axios';
 
 // In production (Render), __API_URL__ is the backend service URL.
 // In dev, it is '' so Vite's proxy handles /api → localhost:5000.
-const BASE = (typeof __API_URL__ !== 'undefined' && __API_URL__)
-    ? `${__API_URL__}/api`
-    : '/api';
+const getBaseUrl = () => {
+    let url = '';
+    if (typeof __API_URL__ !== 'undefined' && __API_URL__) {
+        url = __API_URL__;
+    } else if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
+        url = import.meta.env.VITE_API_URL;
+    }
+
+    if (!url) return '/api';
+
+    // If host was passed without protocol (e.g. Render fromService property: host)
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = `https://${url}`;
+    }
+
+    return `${url.replace(/\/+$/, '')}/api`;
+};
+
+const BASE = getBaseUrl();
 
 const api = axios.create({ baseURL: BASE });
 
@@ -21,10 +37,12 @@ api.interceptors.request.use((config) => {
 });
 
 // Auto-logout on 401 (expired or invalid token)
+// IMPORTANT: Do NOT auto-reload if the 401 was returned by the login endpoint itself!
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response && error.response.status === 401) {
+        const isLoginRequest = error.config?.url?.includes('/auth/login');
+        if (error.response && error.response.status === 401 && !isLoginRequest) {
             localStorage.removeItem('clinic-auth-session');
             window.location.reload();
         }

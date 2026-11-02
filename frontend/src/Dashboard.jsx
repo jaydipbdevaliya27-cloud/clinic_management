@@ -8,7 +8,7 @@ export default function Dashboard({ db, goToPatient }) {
     const [activeView, setActiveView] = useState("visits"); // "visits" | "families" | "patients" | "dues"
 
     const rows = useMemo(() => allPatientsFlat(db), [db]);
-    const familiesList = Object.values(db.families).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    const familiesList = Object.values(db?.families || {}).sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
     const totalFamilies = familiesList.length;
     const totalPatients = rows.length;
 
@@ -19,7 +19,7 @@ export default function Dashboard({ db, goToPatient }) {
     const dateCollection = targetVisits.reduce((s, v) => s + (Number(v.received) || 0), 0);
     const totalDue = rows.reduce((s, r) => s + r.totalDue, 0);
 
-    let recent = [...allVisits].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+    let recent = [...allVisits].sort((a, b) => (String(b.date || '') + String(b.time || '')).localeCompare(String(a.date || '') + String(a.time || '')));
     if (activeView === "visits") recent = recent.filter(v => v.date === dateFilter);
 
     const duesList = rows.filter((r) => r.totalDue > 0).sort((a, b) => b.totalDue - a.totalDue);

@@ -20,7 +20,7 @@ import {
     deleteDietary as apiDeleteDietary,
 } from "./api";
 
-export default function ClinicApp({ doctorProfile, onLogout, onUpdateDoctorProfile }) {
+export default function ClinicApp({ doctorProfile, onLogout, onUpdateDoctorProfile, onBackToAdmin }) {
     const [db, setDb] = useState(null);
     const [view, setView] = useState("dashboard");
     const [theme, setTheme] = useState(() => localStorage.getItem("clinic_theme") || "light");
@@ -273,7 +273,7 @@ export default function ClinicApp({ doctorProfile, onLogout, onUpdateDoctorProfi
             <Sidebar view={view} setView={setView} isOpen={sidebarOpen} />
 
             <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-                <TopBar query={topQuery} setQuery={setTopQuery} onSearchSubmit={handleGlobalSearch} db={db} toggleSidebar={() => setSidebarOpen(s => !s)} theme={theme} setTheme={(t) => { setTheme(t); localStorage.setItem("clinic_theme", t); }} doctorProfile={doctorProfile} onLogout={onLogout} onUpdateDoctorProfile={onUpdateDoctorProfile} />
+                <TopBar query={topQuery} setQuery={setTopQuery} onSearchSubmit={handleGlobalSearch} db={db} toggleSidebar={() => setSidebarOpen(s => !s)} theme={theme} setTheme={(t) => { setTheme(t); localStorage.setItem("clinic_theme", t); }} doctorProfile={doctorProfile} onLogout={onLogout} onUpdateDoctorProfile={onUpdateDoctorProfile} onBackToAdmin={onBackToAdmin} />
 
                 <div className="cms-scrollbar" style={{ flex: 1, overflowY: "auto", position: "relative" }}>
                     {view === "dashboard" && <Dashboard db={db} goToPatient={(famId, patId) => { setSelection({ familyId: famId, patientId: patId }); setView("case"); }} />}

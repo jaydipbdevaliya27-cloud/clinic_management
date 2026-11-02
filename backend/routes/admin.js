@@ -16,9 +16,13 @@ router.get('/doctors', async (req, res) => {
 // POST /api/admin/doctors
 router.post('/doctors', async (req, res) => {
     try {
-        const { username, password, clinicName } = req.body;
+        let { username, password, clinicName } = req.body;
         if (!username || !password || !clinicName)
             return res.status(400).json({ message: 'All fields required' });
+
+        username = String(username).trim();
+        password = String(password).trim();
+        clinicName = String(clinicName).trim();
 
         const exists = await Doctor.findOne({ username: username.toLowerCase() });
         if (exists) return res.status(409).json({ message: 'Username already exists' });
@@ -33,6 +37,7 @@ router.post('/doctors', async (req, res) => {
         await doctor.save();
 
         const profile = {
+            _id: doctor._id.toString(),
             id: doctor._id.toString(),
             username: doctor.username,
             clinics: doctor.clinics,

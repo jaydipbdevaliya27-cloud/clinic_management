@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
     Stethoscope, Search, AlertCircle, CheckCircle2, Home, UserPlus,
-    ClipboardList, BarChart3, Menu, Moon, Sun
+    ClipboardList, BarChart3, Menu, Moon, Sun, ShieldCheck
 } from "lucide-react";
 import { todayISO, fmtDate, nowTime } from "./helpers";
 import DoctorProfileDropdown from "./DoctorProfileDropdown";
@@ -231,7 +231,7 @@ export function Sidebar({ view, setView, isOpen }) {
     );
 }
 
-export function TopBar({ query, setQuery, onSearchSubmit, db, toggleSidebar, theme, setTheme, doctorProfile, onLogout, onUpdateDoctorProfile }) {
+export function TopBar({ query, setQuery, onSearchSubmit, db, toggleSidebar, theme, setTheme, doctorProfile, onLogout, onUpdateDoctorProfile, onBackToAdmin }) {
     const [profileOpen, setProfileOpen] = useState(false);
     const suggestions = db ? useSuggestions(db) : { globalSearch: [] };
     return (
@@ -266,6 +266,17 @@ export function TopBar({ query, setQuery, onSearchSubmit, db, toggleSidebar, the
                 >
                     {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
                 </button>
+
+                {onBackToAdmin && (
+                    <button
+                        className="cms-btn-ghost"
+                        onClick={onBackToAdmin}
+                        style={{ padding: "6px 12px", borderRadius: 8, display: "flex", alignItems: "center", gap: 6, fontSize: 13, height: 34, color: "#16a34a", background: "rgba(22, 163, 74, 0.08)", border: "1px solid rgba(22, 163, 74, 0.2)" }}
+                        title="Return to Admin Dashboard"
+                    >
+                        <ShieldCheck size={16} /> Admin Dashboard
+                    </button>
+                )}
 
                 {doctorProfile && (
                     <div style={{ display: "flex", alignItems: "center", borderLeft: "1px solid var(--border)", paddingLeft: 16, marginLeft: 4, position: "relative" }}>

@@ -2,7 +2,8 @@
  * seed.js — Run once to populate MongoDB with demo data for Dhyey Clinic.
  * Usage: node seed.js
  */
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const dns = require('dns');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 const mongoose = require('mongoose');
@@ -15,9 +16,10 @@ const Counter = require('./models/Counter');
 
 const CLINIC_ID = 'demo';
 const TODAY = new Date().toISOString().slice(0, 10);
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/clinic_management';
 
 async function seed() {
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(MONGO_URI);
     console.log('Connected to MongoDB');
 
     // Clean existing demo data
@@ -119,4 +121,4 @@ async function seed() {
     process.exit(0);
 }
 
-seed().catch((err) => { console.error(err); process.exit(1); });
+seed().catch((err) => { console.error('❌ Seed error:', err); process.exit(1); });
