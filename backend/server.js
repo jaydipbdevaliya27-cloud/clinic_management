@@ -1,4 +1,7 @@
 require('dotenv').config();
+const dns = require('dns');
+// Use Google DNS to fix SRV lookup issues on some ISPs
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
