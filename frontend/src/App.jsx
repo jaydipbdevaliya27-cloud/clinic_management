@@ -8,7 +8,13 @@ function App() {
     const [authState, setAuthState] = useState(() => {
         try {
             const stored = localStorage.getItem("clinic-auth-session");
-            return stored ? JSON.parse(stored) : null;
+            const parsed = stored ? JSON.parse(stored) : null;
+            // Reject old sessions that don't have a JWT token (pre-backend era)
+            if (parsed && !parsed.token) {
+                localStorage.removeItem("clinic-auth-session");
+                return null;
+            }
+            return parsed;
         } catch (e) { return null; }
     });
 

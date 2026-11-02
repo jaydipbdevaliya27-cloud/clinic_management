@@ -20,6 +20,18 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+// Auto-logout on 401 (expired or invalid token)
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            localStorage.removeItem('clinic-auth-session');
+            window.location.reload();
+        }
+        return Promise.reject(error);
+    }
+);
+
 /* ---- Auth ---- */
 export const login = (username, password) =>
     api.post('/auth/login', { username, password }).then(r => r.data);
