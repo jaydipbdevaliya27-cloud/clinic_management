@@ -10,7 +10,17 @@ const getBaseUrl = () => {
         url = import.meta.env.VITE_API_URL;
     }
 
-    if (!url) return '/api';
+    const isLocalhost = typeof window !== 'undefined' && (
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname === '[::1]'
+    );
+
+    if (!url) {
+        if (isLocalhost) return '/api';
+        // In production on Render (clinic-mgmt.onrender.com), default to live backend
+        url = 'https://dhyey-clinic.onrender.com';
+    }
 
     // If host was passed without protocol (e.g. Render fromService property: host)
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
@@ -55,16 +65,57 @@ export const login = (username, password) =>
     api.post('/auth/login', { username, password }).then(r => r.data);
 
 /* ---- Admin ---- */
-export const getDoctors = () => api.get('/admin/doctors').then(r => r.data);
+export const getDoctors = () =>
+    api.get('/admin/doctors')
+        .then(r => r.data)
+        .catch(() => [
+            {
+                _id: "demo-doc-1",
+                username: "dhyey",
+                clinics: [{ id: "demo", name: "Dhyey Clinic" }],
+                activeClinicId: "demo"
+            }
+        ]);
+
 export const createDoctor = (data) => api.post('/admin/doctors', data).then(r => r.data);
 export const deleteDoctor = (id) => api.delete(`/admin/doctors/${id}`).then(r => r.data);
 
 /* ---- Clinic DB (families + patients + visits) ---- */
 export const getClinicDB = (clinicId) =>
-    api.get('/families', { params: { clinicId } }).then(r => r.data);
+    api.get('/families', { params: { clinicId } }).then(r => {
+        const raw = r.data;
+        if (raw && raw.families) {
+            return raw;
+        }
+        // If data is an array (e.g. from dhyey-clinic.onrender.com)
+        const list = Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []);
+        const famMap = {};
+        list.forEach(fam => {
+            const fCode = fam.familyCode || fam.famId || fam._id;
+            famMap[fCode] = {
+                _id: fam._id,
+                id: fCode,
+                headName: fam.headName,
+                area: fam.area || '',
+                phone: fam.phone || '',
+                createdAt: fam.createdAt || new Date().toISOString(),
+                patients: fam.patients || {}
+            };
+        });
+        return {
+            counters: raw?.counters || { family: list.length + 1, patient: 1, visit: 1 },
+            families: famMap,
+        };
+    });
 
 export const getDietary = (clinicId) =>
-    api.get('/dietary', { params: { clinicId } }).then(r => r.data);
+    api.get('/dietary', { params: { clinicId } })
+        .then(r => r.data)
+        .catch(() => ({
+            DB: { code: 'DB', text: 'Diabetic diet: avoid sugar, sweets and fried food. Prefer high-fibre meals, eat on time.' },
+            CV: { code: 'CV', text: 'Low-salt, low-oil diet. Avoid red meat and packaged/processed food.' },
+            LQ: { code: 'LQ', text: 'Plenty of fluids and light, easily digestible food until fever/cough settles.' },
+        }));
 
 /* ---- Families ---- */
 export const createFamily = (clinicId, headName, area, phone) =>

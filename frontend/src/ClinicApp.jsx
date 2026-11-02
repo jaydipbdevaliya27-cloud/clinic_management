@@ -41,10 +41,23 @@ export default function ClinicApp({ doctorProfile, onLogout, onUpdateDoctorProfi
 
         Promise.all([getClinicDB(clinicId), getDietary(clinicId)])
             .then(([dbData, dietaryData]) => {
-                setDb({ ...dbData, dietary: dietaryData });
+                setDb({
+                    counters: dbData?.counters || { family: 1, patient: 1, visit: 1 },
+                    families: dbData?.families || {},
+                    dietary: dietaryData || {},
+                });
             })
             .catch((err) => {
                 console.error("Failed to load clinic DB:", err);
+                setDb({
+                    counters: { family: 1, patient: 1, visit: 1 },
+                    families: {},
+                    dietary: {
+                        DB: { code: 'DB', text: 'Diabetic diet: avoid sugar, sweets and fried food.' },
+                        CV: { code: 'CV', text: 'Low-salt, low-oil diet. Avoid red meat.' },
+                        LQ: { code: 'LQ', text: 'Plenty of fluids and light, easily digestible food.' },
+                    },
+                });
                 showToast("Failed to load clinic data. Is the backend running?", "error");
             });
     }, [clinicId]);

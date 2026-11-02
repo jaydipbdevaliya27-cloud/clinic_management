@@ -31,7 +31,4 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        fromService:
-          name: clinic-management-backend
-          type: web
-          property: host
+        value: https://dhyey-clinic.onrender.com
